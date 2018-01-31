@@ -1,13 +1,4 @@
-pom.xml
-pom.xml.asc
-*.jar
-*.class
-/lib/
-/classes/
-/target/
-/checkouts/
-.lein-deps-sum
-.lein-repl-history
-.lein-plugins/
-.lein-failures
-.nrepl-port
+jsdoc
+node_modules/*
+!node_modules/nodeunit
+package-lock.json
