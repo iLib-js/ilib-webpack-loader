@@ -1,8 +1,8 @@
 {
-    "name": "ilib-webpack-plugin",
-    "version": "1.0.0",
-    "main": "./ilib-webpack-plugin.js",
-    "description": "A plugin and loader for webpack that knows how to load ilib locale data files.",
+    "name": "ilib-webpack-loader",
+    "version": "13.1.0",
+    "main": "./index.js",
+    "description": "A loader for webpack that knows how to load ilib locale data files.",
     "license": "Apache-2.0",
     "keywords": [
         "internationalization",
@@ -16,8 +16,7 @@
         "locale",
         "translation",
         "webpack",
-        "loader",
-        "plugin"
+        "loader"
     ],
     "email": "edwin.hoogerbeets@healthtap.com",
     "author": {
@@ -37,12 +36,11 @@
     ],
     "directories": {
         "docs": "./docs",
-        "lib": "./lib",
         "test": "./test"
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/iLib-js/ilib-webpack-plugin.git"
+        "url": "https://github.com/iLib-js/ilib-webpack-loader.git"
     },
     "engines": {
         "node": ">=0.12"
