@@ -115,6 +115,7 @@ function emitLocaleData(compilation, options) {
         var outputSet = {};
         var match;
         var root = findIlibRoot();
+        var dataRoot = path.join(root, (options.compilation && options.compilation === "uncompiled") ? "data/locale" : "locale");
 
         var locales = options.locales;
         locales.forEach(function(locale) {
@@ -134,7 +135,7 @@ function emitLocaleData(compilation, options) {
                     // If they just use the generic "charset" or "charmaps" data, then
                     // we figure out which charsets are appropriate for the locale
                     if (!lang2charset) {
-                        lang2charset = require(path.join(root, "locale/lang2charset.json"));
+                        lang2charset = require(path.join(dataRoot, "lang2charset.json"));
                     }
 
                     var l = new Locale(locale);
@@ -166,7 +167,7 @@ function emitLocaleData(compilation, options) {
                 } else if (filename === "zoneinfo") {
                     // time zone data in the zoneinfo files are a special case because they are non-locale data
                     // console.log(">>>>>>>>>>>>> processing zoneinfo. cwd is " + process.cwd());
-                    var cwdToData = path.join(root, "locale/zoneinfo/zonetab.json");
+                    var cwdToData = path.join(dataRoot, "zoneinfo/zonetab.json");
                     var data = fs.readFileSync(cwdToData, "utf-8");
                     var zonetab = JSON.parse(data);
                     // console.log(">>>>>>>>>>>>> got zone tab.");
@@ -190,7 +191,7 @@ function emitLocaleData(compilation, options) {
                     });
                     zoneSet.forEach(function(zone) {
                         try {
-                            var cwdToData = path.join(root, "locale/zoneinfo", zone + ".json");
+                            var cwdToData = path.join(dataRoot, "zoneinfo", zone + ".json");
                             if (fs.existsSync(cwdToData)) {
                                 data = fs.readFileSync(cwdToData, "utf-8");
                                 var line = 'ilib.data.zoneinfo["' + zone.replace(/-/g, "m").replace(/\+/g, "p") + '"] = ' + data + ';\n';
@@ -203,7 +204,7 @@ function emitLocaleData(compilation, options) {
                     }.bind(this));
 
                     // now add the generic zones
-                    var zoneinfoDir = path.join(root, "locale/zoneinfo");
+                    var zoneinfoDir = path.join(dataRoot, "zoneinfo");
                     var list = fs.readdirSync(zoneinfoDir);
                     list = list.concat(fs.readdirSync(path.join(zoneinfoDir, "Etc")).map(function(zone) {
                         return "Etc/" + zone;
@@ -213,7 +214,7 @@ function emitLocaleData(compilation, options) {
                         return pathname.endsWith(".json") && pathname !== "zonetab.json";
                     }).forEach(function (file) {
                         var zone = path.basename(file, ".json");
-                        var cwdToData = path.join(root, "locale/zoneinfo", file);
+                        var cwdToData = path.join(dataRoot, "zoneinfo", file);
                         data = fs.readFileSync(cwdToData, "utf-8");
                         var line = 'ilib.data.zoneinfo["' + zone.replace(/-/g, "m").replace(/\+/g, "p") + '"] = ' + data + ';\n';
                         // console.log(">>>>>>>>>>>>> Adding generic zone: " + line);
@@ -241,7 +242,7 @@ function emitLocaleData(compilation, options) {
 
                     parts.forEach(function(localeDir) {
                         try {
-                            var cwdToData = path.join(root, "locale", localeDir, filename + ".json");
+                            var cwdToData = path.join(dataRoot, localeDir, filename + ".json");
                             if (fs.existsSync(cwdToData)) {
                                 var part = localeDir === "." ? "root" : localeDir;
                                 part = part.replace(/\//g, "-");
@@ -275,7 +276,7 @@ function emitLocaleData(compilation, options) {
             if (!outputSet.root) {
                 outputSet.root = {};
             }
-            var data, cwdToData = path.join(root, "locale/charsetaliases.json");
+            var data, cwdToData = path.join(dataRoot, "charsetaliases.json");
             if (!outputSet.root.charsetaliases && fs.existsSync(cwdToData)) {
                 data = fs.readFileSync(cwdToData, "utf-8");
                 var line = "ilib.data.charsetaliases = " + data + ";\n";
@@ -283,7 +284,7 @@ function emitLocaleData(compilation, options) {
             }
 
             charsets.forEach(function(charset) {
-                var data, cwdToData = path.join(root, "locale/charset", charset + ".json");
+                var data, cwdToData = path.join(dataRoot, "charset", charset + ".json");
                 if (!outputSet.root[filename] && fs.existsSync(cwdToData)) {
                     data = fs.readFileSync(cwdToData, "utf-8");
                     var line = "ilib.data.charset_" + toIlibDataName(charset) + " = " + data + ";\n";
@@ -302,7 +303,7 @@ function emitLocaleData(compilation, options) {
                     outputSet[loc] = {};
                 }
                 charmaps[locale].forEach(function(charset) {
-                    var data, cwdToData = path.join(root, "locale/charmaps", charset + ".json");
+                    var data, cwdToData = path.join(dataRoot, "charmaps", charset + ".json");
                     if (!optional.has(charset) && !outputSet[loc][charset] && fs.existsSync(cwdToData)) {
                         data = fs.readFileSync(cwdToData, "utf-8");
                         var line = "ilib.data.charmaps_" + toIlibDataName(charset) + " = " + data + ";\n";
@@ -315,7 +316,7 @@ function emitLocaleData(compilation, options) {
         function addForm(form, script) {
             if (script) {
                 try {
-                    var cwdToData = path.join(root, "locale", form, script + ".json");
+                    var cwdToData = path.join(dataRoot, form, script + ".json");
                     if (fs.existsSync(cwdToData)) {
                         data = fs.readFileSync(cwdToData, "utf-8");
                         var line = '// form ' + form + ' script ' + script + '\nilib.extend(ilib.data.norm.' + form + ', ' + data + ');\n';

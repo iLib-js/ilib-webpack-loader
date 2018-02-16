@@ -110,6 +110,17 @@ assembled and dynamic.
    Using dynamic data is a good choice if you have a lot of locales or use a lot of
    different ilib classes.
 
+Compressed or Not?
+---
+
+You can compress/uglify ilib code normally using the regular uglify webpack plugin.
+Note that the ilib code in npm is already uglified, so you will get that by default
+(except for the webpack glue/wrapper code of course.)
+
+If you would like to create a version of ilib that is NOT compressed, you're going
+to have to do a little more work. See the sections below for details on how to
+do that.
+
 Using the Loader
 ----------------
 
@@ -189,19 +200,16 @@ Using the Loader
    const DateFmt = require("ilib/lib/DateFmt");
    ```
 
-1. Include a special ilib files that are used to generate and load all of the locale data:
+1. Include a special ilib file that is used to generate and load all of the locale data:
 
    ```
-   // this code tells ilib how to load locale data using webpack:
-   const wpl = require("ilib/lib/WebpackLoader");
-
    // this code generates the locale data:
    const ilibdata = require("ilib/lib/ilib-getdata.js");
    ```
 
-These require calls need to go into a file that is processed near the end of your
-webpack packaging so that when it generates the locale data, it has already scanned
-all of the ilib files to find the locale data they use.
+   The require call for ilib-getdata.js need to go into a file that is processed near the end of your
+   webpack packaging so that when it generates the locale data, it has already scanned
+   all of the ilib files to find the locale data they use.
 
 # How it Works
 
@@ -218,7 +226,7 @@ become part of your webpack bundles.
 
 Step-by-step:
 
-1. Run webpack in you app.
+1. Run webpack in your app as normal.
 1. Webpack processes each of your js files looking for calls to ilib, which are in a
    different bundle.
 1. The ilib-webpack-loader also processes each of your js files looking for special
@@ -292,6 +300,55 @@ in the ilib sources. See [the ilib demo app on github](https://github.com/iLib-j
 for details. You can try it out for yourself if you git clone the ilib project,
 change directory to ilib/docs/demo and then simply run "webpack".
 
+Creating an Uncompressed Version of iLib
+---
+
+By default all of the ilib code published to npm is uglified already. In order to make
+an uncompressed version of ilib (perhaps for debugging?), follow these steps:
+
+1. Clone the ilib repo from [github](https://github.com/iLib-js/iLib).
+
+1. Install java 1.8 and ant to build it. Yes, we will be moving
+   to grunt soon to build the js parts. The ilib repo includes some
+   java code for Android, so we have to keep Java and ant for now.
+
+1. cd to the "js" directory and enter "ant". Allow it to build some stuff.
+
+Now you can point your webpack configuration to this newly built ilib, which
+contains the uncompressed code and locale data files. Note that the "entry"
+property has changed, and there is a new "compilation" option passed to
+the loader.
+
+```
+   module.exports = [{
+       // your regular app configuration here
+   }, {
+       // ilib bundle entry point here
+       entry: "full/path/to/your/ilib/clone/js/lib/ilib.js",
+       output: {
+           filename: 'ilib.js',
+           chunkFilename: 'ilib.[name].js',  // to name the locale bundles
+           path: outputPath,                 // choose an appropriate output dir
+           publicPath: "/" + urlPath,        // add the corresponding URL
+           library: 'ilib',
+           libraryTarget: 'umd'
+       },
+       module: {
+           rules: [{
+               test: /\.js$/,                // Run this loader on all .js files
+               use: {
+                   loader: "ilib-webpack-loader",
+                   options: {
+                       locales: ["en-US", "de-DE", "fr-FR", "it-IT", "ja-JP", "ko-KR", "zh-Hans-CN"],
+                       assembly: "dynamic",
+                       compilation: "uncompiled"  // <- This is the new part!
+                   }
+               }
+           }]
+       }
+   }];
+```
+
 # Creating a Custom Version of iLib
 
 If you do not use webpack in your own project, but you would still like to create a custom
@@ -328,38 +385,38 @@ France.
    something like this:
 
    ```
-    var path = require("path");
+   var path = require("path");
 
-    module.exports = {
-        // ilib bundle entry point here
-        entry: path.resolve("./ilib-metafile.js"),
-        output: {
-            filename: 'ilib-custom.js',       // you can change this if you want
-            chunkFilename: 'ilib.[name].js',  // to name the locale bundles
-            path: path.resolve("./output"),   // choose an appropriate output dir
-            publicPath: "/output/",          // choose the URL where ilib will go
-            library: 'ilib',
-            libraryTarget: 'umd'
-        },
-        module: {
-            rules: [{
-                test: /\.js$/,                // Run this loader on all .js files
-                use: {
-                    loader: "../index.js",
-                    options: {
-                        // edit these for the list of locales you need
-                        locales: ["en-US", "fr-FR"],
-                        assembly: "assembled"
-                    }
-                }
-            }]
-        }
-    };
+   module.exports = {
+       // ilib bundle entry point here
+       entry: path.resolve("./ilib-metafile.js"),
+       output: {
+           filename: 'ilib-custom.js',       // you can change this if you want
+           chunkFilename: 'ilib.[name].js',  // to name the locale bundles
+           path: path.resolve("./output"),   // choose an appropriate output dir
+           publicPath: "/output/",          // choose the URL where ilib will go
+           library: 'ilib',
+           libraryTarget: 'umd'
+       },
+       module: {
+           rules: [{
+               test: /\.js$/,                // Run this loader on all .js files
+               use: {
+                   loader: "../index.js",
+                   options: {
+                      // edit these for the list of locales you need
+                       locales: ["en-US", "fr-FR"],
+                       assembly: "assembled"
+                   }
+               }
+           }]
+       }
+   };
    ```
 
 1. Run "webpack" in the same dir. The output will be in a subdirectory called "output".
 
-1. Update your html to include the custom build of ilib with a normal script tag:
+1. Update your html to include the custom build of ilib with a standard script tag:
 
    ```
    <script src="output/ilib-custom.js"></script>
@@ -376,11 +433,28 @@ France.
    </script>
    ```
 
-Et voila. You are done. Now upload the ilib-custom.js to your web server or check it in to your
-repo so that it gets published with the next push of your site.
+Et voila. You are done.
 
-The above code is also located in ilib-webpack-loader/examples so you can just change dir into
-examples and run "webpack" to try it out. The example above is written with an asynchronous
+Note that ilib automatically copies its public classes up to the global scope,
+so you can just use them normally. If you used ilib 12.0 or earlier, this is
+how it was assembled as well, so if you are upgrading to 13.0, you will probably
+not need to change your code. If you don't want to pollute your global scope,
+you can use all of the classes via the ilib object. Just remove the
+require call for "ilib-unpack.js" in your metafile and rerun webpack.
+
+Now upload the ilib-custom.js to your web server or check it in to your
+repo so that it all gets published with the next push of your site.
+
+Example Code
+---
+
+The above code is also located in examples subdirectory so you can try it
+for yourself. Just change dir into examples and run "webpack" with no arguments.
+
+The example above is written with an asynchronous
 call to the DateFmt constructor, so you can try changing the "assembly" property in the
-webpack.config.js to "dynamic", running webpack again, and reload the html. You will see on
-the console that the packages for French have been loaded dynamically.
+webpack.config.js to "dynamic", run webpack again, reload the html, and it should
+still work properly. You will see on the console that the packages for French have been
+loaded dynamically and that the date appears with French format (dd/MM/yyyy).
+
+                                                 Fin.
