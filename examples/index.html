@@ -1,0 +1,19 @@
+<html>
+<head>
+<script src="output/ilib-custom.js"></script>
+<script>
+    // all of the classes have been copied to the global scope here, so 
+    // you can just start using them:
+    new DateFmt({
+        locale: "fr-FR",
+        sync: false,
+        onLoad: function(df) {
+            alert("Aujourd'hui, c'est " + df.format(new Date()));
+        }
+    });
+</script>
+</head>
+<body>
+Test page
+</body>
+</html>
