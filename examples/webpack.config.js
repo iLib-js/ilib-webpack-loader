@@ -7,7 +7,7 @@ module.exports = {
         filename: 'ilib-custom.js',       // you can change this if you want
         chunkFilename: 'ilib.[name].js',  // to name the locale bundles
         path: path.resolve("./output"),   // choose an appropriate output dir
-        publicPath: "/scripts/",          // choose the URL where ilib will go
+        publicPath: "output/",          // choose the URL where ilib will go
         library: 'ilib',
         libraryTarget: 'umd'
     },
@@ -18,8 +18,9 @@ module.exports = {
                 loader: "../index.js",
                 options: {
                     // edit these for the list of locales you need
-                    locales: ["en-US", "fr-FR"],
-                    assembly: "dynamic"
+                    locales: ["en-US", "fr-FR", "de-DE"],
+                    assembly: "dynamic",
+                    compilation: "uncompiled"
                 }
             }
         }]
