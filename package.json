@@ -32,7 +32,8 @@
     ],
     "files": [
         "README.md",
-        "LICENSE.txt"
+        "LICENSE.txt",
+        "index.js"
     ],
     "directories": {
         "docs": "./docs",
