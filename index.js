@@ -482,9 +482,7 @@ var ilibDataLoader = function(source) {
 
             if (macroName) {
                 if (macroName.toLowerCase() === "localelist") {
-                    output += options.locales.map(function(locale) {
-                        return '"' + locale + '"';
-                    }).join(", ");
+                    output += "Locale.locales = " + JSON.stringify(options.locales) + ";";
                 } else if (macroName.toLowerCase() === "ilibversion") {
                     // the DefinePlugin in the config will replace this with the
                     // actual version number from the project.json file
