@@ -147,7 +147,6 @@ var webpackConfigContents =
     "    module: {\n" +
     "        rules: [{\n" +
     "            test: /\.js$/,\n" +
-    "            exclude: /node_modules/,\n" +
     "            use: {\n" +
     "                loader: 'ilib-webpack-loader',\n" +
     "                options: {\n" +
