@@ -13,7 +13,7 @@ module.exports = {
     },
     module: {
         rules: [{
-            test: /\.js$/,                // Run this loader on all .js files
+            test: /\.(js|html)$/,        // Run this loader on all .js files
             use: {
                 loader: "../index.js",
                 options: {
