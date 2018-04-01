@@ -36,7 +36,7 @@
     "files": [
         "README.md",
         "LICENSE.txt",
-        "index.js",
+        "ilib-webpack-loader.js",
         "ilib-scanner.js"
     ],
     "directories": {

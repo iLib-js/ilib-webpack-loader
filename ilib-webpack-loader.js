@@ -1,5 +1,5 @@
 /**
- * index.js - A webpack loader to process js files and include
+ * ilib-webpack-loader.js - A webpack loader to process js files and include
  * all of the locale data that is needed for the requested locales
  *
  * @license
@@ -24,10 +24,10 @@ const getOptions = require('loader-utils').getOptions;
 
 var path = require('path');
 var fs = require('fs');
-var ilib = require("ilib");
-var Locale = require('ilib/lib/Locale.js');
-var Utils = require('ilib/lib/Utils.js');
-var LocaleMatcher = require('ilib/lib/LocaleMatcher.js');
+var ilib;
+var Locale;
+var Utils;
+var LocaleMatcher;
 
 /*
 const schema = {
@@ -39,6 +39,20 @@ const schema = {
     }
 };
  */
+
+function loadIlibClasses(location) {
+    if (location) {
+        ilib = require(path.join(location, "lib/ilib-node.js"));
+        Locale = require(path.join(location, "lib/Locale.js"));
+        Utils = require(path.join(location, "lib/Utils.js"));
+        LocaleMatcher = require(path.join(location, "lib/LocaleMatcher.js"));
+    } else {
+        ilib = require("ilib");
+        Locale = require('ilib/lib/Locale.js');
+        Utils = require('ilib/lib/Utils.js');
+        LocaleMatcher = require('ilib/lib/LocaleMatcher.js');
+    }
+}
 
 function makeDirs(path) {
     var parts = path.split(/[\\\/]/);
@@ -60,6 +74,20 @@ function findIlibRoot() {
         return fs.existsSync(path.join(p, "ilib/package.json"));
     });
     return dir && path.join(dir, "ilib");
+}
+
+/**
+ * Convert a set to an array.
+ * 
+ * @param {Set} set to convert
+ * @returns an array with the contents of the set
+ */
+function toArray(set) {
+    var ret = [];
+    set.forEach(function(element) {
+        ret.push(element);
+    });
+    return ret;
 }
 
 var dataPatternSlashStar = /\/\*\s*!data\s*([^\*]+)\*\//g;
@@ -126,7 +154,7 @@ function emitLocaleData(compilation, options) {
         var match;
         var root = options.ilibRoot || findIlibRoot();
         var dataRoot = calcDataRoot(options);
-        var manifest = []; // list of all locale data files that were processed
+        var manifest = new Set(); // list of all locale data files that were processed
 
         var locales = options.locales;
         locales.forEach(function(locale) {
@@ -192,7 +220,7 @@ function emitLocaleData(compilation, options) {
                         outputSet.root = {};
                     }
                     outputSet.root.zonetab = line;
-                    manifest.push("zoneinfo/zonetab.json");
+                    manifest.add("zoneinfo/zonetab.json");
 
                     var regionSet = new Set();
                     locales.forEach(function(locale) {
@@ -214,7 +242,7 @@ function emitLocaleData(compilation, options) {
                                 var line = 'ilib.data.zoneinfo["' + zone.replace(/-/g, "m").replace(/\+/g, "p") + '"] = ' + data + ';\n';
                                 // console.log(">>>>>>>>>>>>> Adding zone: " + line);
                                 outputSet.root[zone] = line;
-                                manifest.push(path.join("zoneinfo", zone + ".json"));
+                                manifest.add(path.join("zoneinfo", zone + ".json"));
                             }
                         } catch (e) {
                             console.log("Error: " + e);
@@ -238,7 +266,7 @@ function emitLocaleData(compilation, options) {
                         // console.log(">>>>>>>>>>>>> Adding generic zone: " + line);
                         // compiler.addDependency(cwdToData);
                         outputSet.root[zone] = line;
-                        manifest.push(path.join("zoneinfo", file));
+                        manifest.add(path.join("zoneinfo", file));
                     }.bind(this));
                 } else {
                     var l = new Locale(locale);
@@ -279,7 +307,7 @@ function emitLocaleData(compilation, options) {
                                     // console.log(">>>>>>>>>>>>> Adding line: " + line);
 
                                     outputSet[part][filename] = line;
-                                    manifest.push(path.join(localeDir, filename + ".json"));
+                                    manifest.add(path.join(localeDir, filename + ".json"));
                                 }
                             }
                         } catch (e) {
@@ -301,7 +329,7 @@ function emitLocaleData(compilation, options) {
                 data = fs.readFileSync(cwdToData, "utf-8");
                 var line = "ilib.data.charsetaliases = " + data + ";\n";
                 outputSet.root.charsetaliases = line;
-                manifest.push("charsetaliases.json");
+                manifest.add("charsetaliases.json");
             }
 
             charsets.forEach(function(charset) {
@@ -311,7 +339,7 @@ function emitLocaleData(compilation, options) {
                     data = fs.readFileSync(cwdToData, "utf-8");
                     var line = "ilib.data.charset_" + toIlibDataName(charset) + " = " + data + ";\n";
                     outputSet.root[filename] = line;
-                    manifest.push(path.join("charset", charset + ".json"));
+                    manifest.add(path.join("charset", charset + ".json"));
 
                     var cs = JSON.parse(data);
                     if (typeof(cs.optional) === "boolean" && cs.optional) {
@@ -329,7 +357,7 @@ function emitLocaleData(compilation, options) {
                         data = fs.readFileSync(cwdToData, "utf-8");
                         var line = "ilib.data.charmaps_" + toIlibDataName(charset) + " = " + data + ";\n";
                         outputSet.root[filename] = line;
-                        manifest.push(path.join("charmaps", charset + ".json"));
+                        manifest.add(path.join("charmaps", charset + ".json"));
                     }
                 });
             }
@@ -344,7 +372,7 @@ function emitLocaleData(compilation, options) {
                         var line = '// form ' + form + ' script ' + script + '\nilib.extend(ilib.data.norm.' + form + ', ' + data + ');\n';
                         // console.log(">>>>>>>>>>>>> Adding form: " + form);
                         outputSet.root[form + "/" + script] = line;
-                        manifest.push(path.join(form, script + ".json"));
+                        manifest.add(path.join(form, script + ".json"));
                     }
                 } catch (e) {
                     console.log("Error: " + e);
@@ -371,7 +399,7 @@ function emitLocaleData(compilation, options) {
         // the manifest, it does not have to load the locale files that would contain it,
         // which leads to 404s.
         var manifestObj =  {
-            files: manifest
+            files: toArray(manifest)
         };
         var outputPath = path.join(outputDir, "locales");
         makeDirs(outputPath);
@@ -381,6 +409,9 @@ function emitLocaleData(compilation, options) {
         for (var filename in outputSet) {
             var outputFileName = filename + ".js";
             var dataFiles = outputSet[filename];
+            var ilibRoot = options.ilibRoot ?
+                path.join(options.ilibRoot, "lib/ilib.js") :
+                "ilib/lib/ilib.js";
 
             var output =
                 "/*\n" +
@@ -389,7 +420,7 @@ function emitLocaleData(compilation, options) {
                 " */\n"
                 output += (options.assembly === "dynamicdata") ?
                     "module.exports.installLocale = function(ilib) {\n" :
-                        "var ilib = require('ilib/lib/ilib.js');\n";
+                        "var ilib = require('" + ilibRoot + "');\n";
 
             for (var dataFile in dataFiles) {
                 output += dataFiles[dataFile];
@@ -438,6 +469,12 @@ var ilibDataLoader = function(source) {
     options.target = options.target || "web";
 
     if (options.debug) console.log("ilibdata-loader: processing file " + this.resource);
+
+    // When making the ilib build inside of the ilib project, the webpack.config.js passes in
+    // a ilibRoot parameter so that it gets the latest (local) ilib files. Other callers do not need to pass
+    // in the ilibRoot. Instead, they should use the default, which is to get the ilib files from
+    // the installed ilib package in their node_modules directory.
+    loadIlibClasses(options.ilibRoot);
 
     // mix all of the locale data we find in all of the js files together so that
     // we can emit one file for each locale with all the locale data that are
@@ -551,14 +588,13 @@ var ilibDataLoader = function(source) {
                 output += (file === "ilibmanifest") ?
                     "            System.import(/* webpackChunkName: '" + file + "' */ '" + path.join(outputPath, file + ".json") + "').then(function(module) {\n" +
                     "                callback(module);\n" :
+                    "            System.import(/* webpackChunkName: '" + file + "' */ '" + path.join(outputPath, file + ".js") + "').then(function(module) {\n" +
+                    "                module.installLocale(ilib);\n" +
+                    "                callback(module);\n";
 
-                        "            System.import(/* webpackChunkName: '" + file + "' */ '" + path.join(outputPath, file + ".js") + "').then(function(module) {\n" +
-                        "                module.installLocale(ilib);\n" +
-                        "                callback(module);\n";
-
-                    output +=
-                        "            });\n" +
-                        "            break;\n"
+                output +=
+                    "            });\n" +
+                    "            break;\n"
             });
 
             partial = partial.substring(match.index + match[0].length);
