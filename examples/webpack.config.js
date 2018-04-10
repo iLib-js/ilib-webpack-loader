@@ -19,7 +19,7 @@ module.exports = {
                 options: {
                     // edit these for the list of locales you need
                     locales: ["en-US", "fr-FR", "de-DE", "ko-KR"],
-                    assembly: "dynamic",
+                    assembly: "dynamicdata",
                     compilation: "uncompiled"
                 }
             }
