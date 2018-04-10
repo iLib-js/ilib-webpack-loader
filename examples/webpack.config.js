@@ -15,11 +15,11 @@ module.exports = {
         rules: [{
             test: /\.(js|html)$/,        // Run this loader on all .js files
             use: {
-                loader: "../index.js",
+                loader: "../ilib-webpack-loader.js",
                 options: {
                     // edit these for the list of locales you need
-                    locales: ["en-US", "fr-FR", "de-DE"],
-                    assembly: "dynamic",
+                    locales: ["en-US", "fr-FR", "de-DE", "ko-KR"],
+                    assembly: "dynamicdata",
                     compilation: "uncompiled"
                 }
             }
