@@ -27,7 +27,6 @@ var fs = require('fs');
 var ilib;
 var Locale;
 var Utils;
-var LocaleMatcher;
 
 /*
 const schema = {
@@ -45,12 +44,10 @@ function loadIlibClasses(location) {
         ilib = require(path.join(location, "lib/ilib-node.js"));
         Locale = require(path.join(location, "lib/Locale.js"));
         Utils = require(path.join(location, "lib/Utils.js"));
-        LocaleMatcher = require(path.join(location, "lib/LocaleMatcher.js"));
     } else {
         ilib = require("ilib");
         Locale = require('ilib/lib/Locale.js');
         Utils = require('ilib/lib/Utils.js');
-        LocaleMatcher = require('ilib/lib/LocaleMatcher.js');
     }
 }
 
@@ -99,8 +96,6 @@ var macroPatternQuoted = /["']!macro\s*(\S*)["']/g;
 var loadLocaleDataPattern = /\/\/\s*!loadLocaleData/g;
 var defineLocaleDataPattern = /\/\/\s*!defineLocaleData/g;
 
-var normPattern = /(nfc|nfd|nfkc|nfkd)(\/(\w+))?/g;
-
 function calcDataRoot(options) {
     var ilibRoot = options.ilibRoot;
     if (!ilibRoot) {
@@ -110,12 +105,18 @@ function calcDataRoot(options) {
     }
 }
 
+var emptyLocaleDataFilesEmitted = false;
+
 /**
- * Produce a set of js files that contain the necessary
- * locale data. These files are output into js files, one
- * per locale part, that each export a function that adds
- * data for that locale part to the ilib.data structure.
- * For example, the locale "en-US" has the following parts:
+ * Produce a set of js files that will eventually contain 
+ * the necessary locale data. These files are created
+ * as empty files now so that the dependency graph of the
+ * compilation is correct. Then, later, the ilib webpack
+ * plugin will fill in the contents of these files once 
+ * all other js files have been processed and we know for
+ * sure what the contents should be. These js files are
+ * created with one per locale part. For example, the 
+ * locale "en-US" has the following parts:
  *
  * <ul>
  * <li><i>root</i> - shared by all locales, containing
@@ -134,315 +135,68 @@ function calcDataRoot(options) {
  * the less specific data.
  *
  * @param compilation the webpack compilation
- * @param optionsk the options for this loader from
+ * @param options the options for this loader from
  * the webpack.config.js
  * @returns {Array.<string>} an array of files that
  * were emitted by this function
  */
 function emitLocaleData(compilation, options) {
-    var localeData = compilation.localeDataSet;
-    var outputFileName, output;
-    var scripts = new Set();
-    var normalizations = {};
-    var outputDir = compilation.options.output.path;
-
-    if (localeData) {
-        var charsets = new Set();
-        var charmaps = {};
-        var lang2charset;
-        var outputSet = {};
-        var match;
-        var root = options.ilibRoot || findIlibRoot();
-        var dataRoot = calcDataRoot(options);
-        var manifest = new Set(); // list of all locale data files that were processed
-
+    if (!emptyLocaleDataFilesEmitted) {
+        var outputDir = compilation.options.output.path;
+        var outputSet = new Set();
+    
         var locales = options.locales;
+    
+        if (options.debug) console.log("Creating locale data for locales " + locales.join(","));
+    
         locales.forEach(function(locale) {
-            var lm = new LocaleMatcher({locale: locale});
-            var full = lm.getLikelyLocale();
-            if (full.getScript()) {
-                scripts.add(full.getScript());
-            }
-        });
-        if (options.debug) console.log("emitting locale data for locales " + locales.join(","));
-
-        locales.forEach(function(locale) {
-            localeData.forEach(function(filename) {
-                normPattern.lastIndex = 0;
-                if (filename === "charset" || filename === "charmaps") {
-                    // charmaps and charset info are special cases because they are non-locale data.
-                    // If they just use the generic "charset" or "charmaps" data, then
-                    // we figure out which charsets are appropriate for the locale
-                    if (!lang2charset) {
-                        var fileName = path.join(dataRoot, "lang2charset.json");
-
-                        if (fileName[0] !== '/' && fileName[0] !== '.' ) {
-                            fileName = "./" + fileName;
-                        }
-                        lang2charset = require(fileName);
-                    }
-
-                    var l = new Locale(locale);
-                    var spec = l.getLanguage() + (l.getScript() ? ("-" + l.getScript()) : ""); // TODO: should use l.getLangScript()
-                    if (lang2charset[spec]) {
-                        // always add the charset, even when charmaps are requested, because the
-                        // charmaps need the charset for the charmap
-                        lang2charset[spec].forEach(function(charsetName) {
-                            charsets.add(charsetName);
-                        });
-
-                        if (filename === "charmaps") {
-                            if (!charmaps[spec]) {
-                                charmaps[spec] = new Set();
-                            }
-                            lang2charset[spec].forEach(function(charsetName) {
-                                charmaps[spec].add(charsetName);
-                            });
-                        }
-                    }
-                } else if ((match = normPattern.exec(filename)) !== null) {
-                    var form = match[1];
-                    if (!normalizations[form]) {
-                        normalizations[form] = new Set();
-                    }
-                    if (match.length > 3) {
-                        normalizations[form].add(match[3] || "");
-                    }
-                } else if (filename === "zoneinfo") {
-                    // time zone data in the zoneinfo files are a special case because they are non-locale data
-                    // console.log(">>>>>>>>>>>>> processing zoneinfo. cwd is " + process.cwd());
-                    var cwdToData = path.join(dataRoot, "zoneinfo/zonetab.json");
-                    var data = fs.readFileSync(cwdToData, "utf-8");
-                    var zonetab = JSON.parse(data);
-                    // console.log(">>>>>>>>>>>>> got zone tab.");
-                    var line = 'ilib.data.zoneinfo.zonetab = ' + data + ';\n';
-                    if (!outputSet.root) {
-                        outputSet.root = {};
-                    }
-                    outputSet.root.zonetab = line;
-                    manifest.add("zoneinfo/zonetab.json");
-
-                    var regionSet = new Set();
-                    locales.forEach(function(locale) {
-                        regionSet.add(new Locale(locale).region);
-                    });
-                    var zoneSet = new Set();
-                    regionSet.forEach(function(region) {
-                        if (zonetab[region]) {
-                            zonetab[region].forEach(function(zone) {
-                                zoneSet.add(zone);
-                            });
-                        }
-                    });
-                    zoneSet.forEach(function(zone) {
-                        try {
-                            var cwdToData = path.join(dataRoot, "zoneinfo", zone + ".json");
-                            if (fs.existsSync(cwdToData)) {
-                                data = fs.readFileSync(cwdToData, "utf-8");
-                                var line = 'ilib.data.zoneinfo["' + zone.replace(/-/g, "m").replace(/\+/g, "p") + '"] = ' + data + ';\n';
-                                // console.log(">>>>>>>>>>>>> Adding zone: " + line);
-                                outputSet.root[zone] = line;
-                                manifest.add(path.join("zoneinfo", zone + ".json"));
-                            }
-                        } catch (e) {
-                            console.log("Error: " + e);
-                        }
-                    }.bind(this));
-
-                    // now add the generic zones
-                    var zoneinfoDir = path.join(dataRoot, "zoneinfo");
-                    var list = fs.readdirSync(zoneinfoDir);
-                    list = list.concat(fs.readdirSync(path.join(zoneinfoDir, "Etc")).map(function(zone) {
-                        return "Etc/" + zone;
-                    }));
-
-                    list.filter(function(pathname) {
-                        return pathname.endsWith(".json") && pathname !== "zonetab.json";
-                    }).forEach(function (file) {
-                        var zone = path.basename(file, ".json");
-                        var cwdToData = path.join(dataRoot, "zoneinfo", file);
-                        data = fs.readFileSync(cwdToData, "utf-8");
-                        var line = 'ilib.data.zoneinfo["' + zone.replace(/-/g, "m").replace(/\+/g, "p") + '"] = ' + data + ';\n';
-                        // console.log(">>>>>>>>>>>>> Adding generic zone: " + line);
-                        // compiler.addDependency(cwdToData);
-                        outputSet.root[zone] = line;
-                        manifest.add(path.join("zoneinfo", file));
-                    }.bind(this));
-                } else {
-                    var l = new Locale(locale);
-
-                    var parts = [
-                        ".",
-                        l.language
-                        ];
-
-                    if (l.script) {
-                        parts.push(l.language + "/" + l.script);
-                        if (l.region) {
-                            parts.push(l.language + "/" + l.script + "/" + l.region);
-                        }
-                    }
-                    if (l.region) {
-                        parts.push(l.language + "/" + l.region);
-                        parts.push("und/" + l.region);
-                    }
-
-                    parts.forEach(function(localeDir) {
-                        try {
-                            var cwdToData = path.join(dataRoot, localeDir, filename + ".json");
-                            if (fs.existsSync(cwdToData)) {
-                                var part = localeDir === "." ? "root" : localeDir;
-                                part = part.replace(/\//g, "-");
-
-                                if (!outputSet[part]) {
-                                    outputSet[part] = {};
-                                }
-                                if (!outputSet[part][filename]) {
-                                    var line = "ilib.data." + toIlibDataName(filename);
-                                    if (part !== "root") {
-                                        line += "_" + toIlibDataName(part);
-                                    }
-                                    data = fs.readFileSync(cwdToData, "utf-8");
-                                    line += " = " + data + ";\n";
-                                    // console.log(">>>>>>>>>>>>> Adding line: " + line);
-
-                                    outputSet[part][filename] = line;
-                                    manifest.add(path.join(localeDir, filename + ".json"));
-                                }
-                            }
-                        } catch (e) {
-                            console.log("Error: " + e);
-                        }
-                    }.bind(this));
+            var l = new Locale(locale);
+    
+            outputSet.add("root");
+            outputSet.add(l.language);
+    
+            if (l.script) {
+                outputSet.add(l.language + "-" + l.script);
+                if (l.region) {
+                    outputSet.add(l.language + "-" + l.script + "-" + l.region);
                 }
-            });
+            }
+            if (l.region) {
+                outputSet.add(l.language + "-" + l.region);
+                outputSet.add("und-" + l.region);
+            }
         }.bind(this));
-
-        if (charsets.size > 0) {
-            var optional = new Set();
-
-            if (!outputSet.root) {
-                outputSet.root = {};
-            }
-            var data, cwdToData = path.join(dataRoot, "charsetaliases.json");
-            if (!outputSet.root.charsetaliases && fs.existsSync(cwdToData)) {
-                data = fs.readFileSync(cwdToData, "utf-8");
-                var line = "ilib.data.charsetaliases = " + data + ";\n";
-                outputSet.root.charsetaliases = line;
-                manifest.add("charsetaliases.json");
-            }
-
-            charsets.forEach(function(charset) {
-                var data, cwdToData = path.join(dataRoot, "charset", charset + ".json");
-                filename = "charset_" + charset;
-                if (!outputSet.root[filename] && fs.existsSync(cwdToData)) {
-                    data = fs.readFileSync(cwdToData, "utf-8");
-                    var line = "ilib.data.charset_" + toIlibDataName(charset) + " = " + data + ";\n";
-                    outputSet.root[filename] = line;
-                    manifest.add(path.join("charset", charset + ".json"));
-
-                    var cs = JSON.parse(data);
-                    if (typeof(cs.optional) === "boolean" && cs.optional) {
-                        optional.add(charset);
-                    }
-                }
-            });
-
-            for (var locale in charmaps) {
-                var loc = (locale === "*" ? "root" : locale);
-                charmaps[locale].forEach(function(charset) {
-                    var data, cwdToData = path.join(dataRoot, "charmaps", charset + ".json");
-                    filename = "charmaps_" + charset;
-                    if (!optional.has(charset) && !outputSet.root[filename] && fs.existsSync(cwdToData)) {
-                        data = fs.readFileSync(cwdToData, "utf-8");
-                        var line = "ilib.data.charmaps_" + toIlibDataName(charset) + " = " + data + ";\n";
-                        outputSet.root[filename] = line;
-                        manifest.add(path.join("charmaps", charset + ".json"));
-                    }
-                });
-            }
-        }
-
-        function addForm(form, script) {
-            if (script) {
-                try {
-                    var cwdToData = path.join(dataRoot, form, script + ".json");
-                    if (fs.existsSync(cwdToData)) {
-                        data = fs.readFileSync(cwdToData, "utf-8");
-                        var line = '// form ' + form + ' script ' + script + '\nilib.extend(ilib.data.norm.' + form + ', ' + data + ');\n';
-                        // console.log(">>>>>>>>>>>>> Adding form: " + form);
-                        outputSet.root[form + "/" + script] = line;
-                        manifest.add(path.join(form, script + ".json"));
-                    }
-                } catch (e) {
-                    console.log("Error: " + e);
-                }
-            }
-        }
-
-        for (var form in normalizations) {
-            if (normalizations[form].has("all")) {
-                // if "all" is there, then we don't need to add each script individually
-                // because they are all in the all.json already
-                addForm(form, "all");
-            } else {
-                var set = (normalizations.size === 0 || (normalizations[form].has("") && normalizations.size === 1)) ? scripts : normalizations[form];
-                set.forEach(function(script) {
-                    if (options.debug) console.log("Including " + form + " for script " + script);
-                    addForm(form, script);
-                });
-            }
-        }
-
+    
         // Write out the manifest file so that the WebpackLoader knows when to attempt
         // to load data and when not to. If a file it is attempting to load is not in
         // the manifest, it does not have to load the locale files that would contain it,
         // which leads to 404s.
+        var files = toArray(outputSet);
         var manifestObj =  {
-            files: toArray(manifest)
+            files: files.map(function(name) {
+                return name + ".js";
+            })
         };
         var outputPath = path.join(outputDir, "locales");
         makeDirs(outputPath);
         if (options.debug) console.log("Emitting " + path.join(outputPath, "ilibmanifest.json"));
         fs.writeFileSync(path.join(outputPath, "ilibmanifest.json"), JSON.stringify(manifestObj), "utf-8");
-
-        for (var filename in outputSet) {
-            var outputFileName = filename + ".js";
-            var dataFiles = outputSet[filename];
-            var ilibRoot = options.ilibRoot ?
-                path.join(options.ilibRoot, "lib/ilib.js") :
-                "ilib/lib/ilib.js";
-
-            var output =
-                "/*\n" +
-                " * WARNING: this is a file generated by ilib-webpack-loader.js.\n" +
-                " * Do not hand edit or else your changes may be overwritten and lost.\n" +
-                " */\n"
-                output += (options.assembly === "dynamicdata") ?
-                    "module.exports.installLocale = function(ilib) {\n" :
-                        "var ilib = require('" + ilibRoot + "');\n";
-
-            for (var dataFile in dataFiles) {
-                output += dataFiles[dataFile];
-            }
-
-            output += (options.assembly === "dynamicdata") ?
-                "};\n" :
-                    "module.exports = ilib;\n";
-
-            if (options.debug) console.log("Emitting " + outputFileName + " size " + output.length);
-
-            var outputFile = path.join(outputPath, outputFileName);
+    
+        // now write out all the empty files
+        
+        files.forEach(function(fileName) {
+            if (options.debug) console.log("Creating " + fileName);
+    
+            var outputFile = path.join(outputPath, fileName + ".js");
             if (options.debug) console.log("Writing to " + outputFile);
             makeDirs(path.dirname(outputFile));
-            fs.writeFileSync(outputFile, output, "utf-8");
-        }
-
+            fs.writeFileSync(outputFile, "", "utf-8"); // write empty file
+        }.bind(this));
+    
+        emptyLocaleDataFilesEmitted = true;
+        
         // console.log("Done emitting locale data.");
-        return Object.keys(outputSet).concat(["ilibmanifest"]);
-    } else {
-        console.log("No data to include");
-        return [];
+        return files.concat(["ilibmanifest"]);
     }
 }
 
@@ -450,7 +204,6 @@ var ilibDataLoader = function(source) {
     const options = getOptions(this) || {};
     var match;
     var output = "";
-    var async = false;
     var callback;
     var outputRoot = (this._compilation.options &&
         this._compilation.options.output &&
@@ -468,7 +221,7 @@ var ilibDataLoader = function(source) {
     options.size = options.size || "standard";
     options.target = options.target || "web";
 
-    if (options.debug) console.log("ilibdata-loader: processing file " + this.resource);
+    if (options.debug) console.log("ilib-loader: processing file " + this.resource);
 
     // When making the ilib build inside of the ilib project, the webpack.config.js passes in
     // a ilibRoot parameter so that it gets the latest (local) ilib files. Other callers do not need to pass
@@ -483,14 +236,6 @@ var ilibDataLoader = function(source) {
         this._compilation.localeDataSet = new Set();
     }
     var dataSet = this._compilation.localeDataSet;
-
-    if (defineLocaleDataPattern.exec(source) !== null) {
-        // This is the special ilib-getdata.js file -- process it asynchronously so
-        // that it will happen after all the other js files are processed
-        async = true;
-        callback = this.async();
-    }
-    defineLocaleDataPattern.lastIndex = 0;
 
     var searchFile = function (re, text) {
         var output = "";
@@ -616,16 +361,10 @@ var ilibDataLoader = function(source) {
         return processLoadLocaleData(partial);
     }
 
-    if (async) {
-        setTimeout(function (source) {
-            callback(null, processFile(source));
-        }, 500, source);
-    } else {
-        output = processFile(source);
+    output = processFile(source);
 
-        // console.log("****************************************\nTransformed file to:\n" + output);
-        return output;
-    }
+    // console.log("****************************************\nTransformed file to:\n" + output);
+    return output;
 };
 
 module.exports = ilibDataLoader;
