@@ -26,7 +26,7 @@ var fs = require("fs");
 var path = require("path");
 
 var OptionsParser = require("options-parser");
-var classes = require("ilib/lib/ilib-unpack.js");
+var classes;
 
 var optionConfig = {
     help: {
@@ -55,6 +55,11 @@ var optionConfig = {
             "zh-Hans-CN", "zh-Hant-HK", "zh-Hant-TW", "zh-Hans-SG"
         ],
         help: "Locales you want your webapp to support. Value is a comma-separated list of BCP-47 style locale tags. Default: the top 20 locales on the internet by traffic."
+    },
+    ilibRoot: {
+        short: "i",
+        varName: "ilibRoot",
+        help: "Explicitly specify the location of the root of ilib. If not specified, this scanner will rely on node to find the ilib instance in the node_modules directory."
     }
 };
 
@@ -78,8 +83,17 @@ var outputFile = path.basename(outputPath);
 var outputDir = path.dirname(outputPath) || ".";
 var webpackConfigPath = path.join(outputDir, "webpack.config.js");
 var locales = typeof(options.opt.locales) === "string" ? options.opt.locales.split(",") : options.opt.locales;
+var ilibRoot = options.opt.ilibRoot;
 
 var classSet = new Set();
+
+function loadIlibClasses() {
+    if (ilibRoot) {
+        classes = require(path.join(ilibRoot, "lib/ilib-unpack.js"));
+    } else {
+        classes = require("ilib/lib/ilib-unpack.js");
+    }
+}
 
 function scanFileOrDir(pathName) {
     stat = fs.statSync(pathName);
@@ -91,6 +105,7 @@ function scanFileOrDir(pathName) {
                 scanFileOrDir(path.join(pathName, file));
             });
         } else if (!pathName.startsWith("ilib")) {
+            loadIlibClasses();
             var data = fs.readFileSync(pathName, "utf-8");
 
             classes.forEach(function(cls) {
@@ -114,15 +129,15 @@ var metaFileContents =
     " * Do not hand edit or else your changes may be overwritten and lost.\n" +
     " * Instead, re-run the scanner to generate a new version of this file.\n" +
     " */\n\n" +
-    'var ilib = require("ilib/lib/ilib.js");\n\n';
+    'var ilib = require("' + (ilibRoot || "ilib") + '/lib/ilib.js");\n\n';
 
 classSet.forEach(function(cls) {
-    metaFileContents += 'ilib.' + cls + ' = require("ilib/lib/' + cls + '.js");\n';
+    metaFileContents += 'ilib.' + cls + ' = require("' + (ilibRoot || "ilib") + '/lib/' + cls + '.js");\n';
 });
 
 metaFileContents +=
-    '\nrequire("ilib/lib/ilib-unpack.js");\n' +
-    'require("ilib/lib/ilib-getdata.js");\n\n' +
+    '\nrequire("' + (ilibRoot || "ilib") + '/lib/ilib-unpack.js");\n' +
+    'require("' + (ilibRoot || "ilib") + '/lib/ilib-getdata.js");\n\n' +
     'module.exports = ilib;\n';
 
 fs.writeFileSync(outputPath, metaFileContents, "utf-8");
@@ -134,6 +149,8 @@ var webpackConfigContents =
     " * Instead, re-run the scanner to generate a new version of this file.\n" +
     " */\n\n" +
     "var path = require('path');\n" +
+    "var webpack = require('webpack');\n" +
+    "var IlibWebpackPlugin = require('ilib-webpack-plugin');\n" +
     "module.exports = {\n" +
     "    entry: path.resolve('./" + outputFile + "'),\n" +
     "    output: {\n" +
@@ -153,11 +170,27 @@ var webpackConfigContents =
     "                    locales: " + JSON.stringify(locales) + ",\n" +
     "                    assembly: '" + options.opt.assembly + "',\n" +
     "                    compilation: '" + options.opt.compilation + "',\n" +
-    "                    size: 'custom'\n" +
+    (ilibRoot ? "                    ilibRoot: '" + ilibRoot + "',\n" : "") +
+    "                    size: 'custom',\n" +
+    "                    debug: true,\n" +
+    "                    target: 'web'\n" +
     "                }\n" +
     "            }\n" +
     "        }]\n" +
-    "    }\n" +
+    "    },\n" +
+    "    plugins: [\n" +
+    "        new webpack.DefinePlugin({\n" +
+    "            __VERSION__: JSON.stringify(require('" + (ilibRoot || 'ilib') + "/package.json').version)\n" +
+    "        }),\n" +
+    "        new IlibWebpackPlugin({\n" +
+    "            locales: " + JSON.stringify(locales) + ",\n" +
+    "            assembly: '" + options.opt.assembly + "',\n" +
+    "            compilation: '" + options.opt.compilation + "',\n" +
+    (ilibRoot ? "            ilibRoot: '" + ilibRoot + "',\n" : "") +
+    "                    debug: true,\n" +
+    "            size: 'custom'\n" +
+    "        })\n" +
+    "    ]\n" +
     "};\n";
 
 fs.writeFileSync(webpackConfigPath, webpackConfigContents, "utf-8");

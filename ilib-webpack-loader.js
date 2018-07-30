@@ -328,7 +328,7 @@ var ilibDataLoader = function(source) {
                     output += "default:\n";
                 }
 
-                output += "        case '" + file + "':\n"
+                output += "        case '" + file + "':\n";
 
                 output += (file === "ilibmanifest") ?
                     "            System.import(/* webpackChunkName: '" + file + "' */ '" + path.join(outputPath, file + ".json") + "').then(function(module) {\n" +
@@ -339,7 +339,7 @@ var ilibDataLoader = function(source) {
 
                 output +=
                     "            });\n" +
-                    "            break;\n"
+                    "            break;\n";
             });
 
             partial = partial.substring(match.index + match[0].length);
