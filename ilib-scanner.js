@@ -172,7 +172,6 @@ var webpackConfigContents =
     "                    compilation: '" + options.opt.compilation + "',\n" +
     (ilibRoot ? "                    ilibRoot: '" + ilibRoot + "',\n" : "") +
     "                    size: 'custom',\n" +
-    "                    debug: true,\n" +
     "                    target: 'web'\n" +
     "                }\n" +
     "            }\n" +
@@ -187,7 +186,6 @@ var webpackConfigContents =
     "            assembly: '" + options.opt.assembly + "',\n" +
     "            compilation: '" + options.opt.compilation + "',\n" +
     (ilibRoot ? "            ilibRoot: '" + ilibRoot + "',\n" : "") +
-    "                    debug: true,\n" +
     "            size: 'custom'\n" +
     "        })\n" +
     "    ]\n" +

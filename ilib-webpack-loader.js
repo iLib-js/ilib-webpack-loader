@@ -288,7 +288,7 @@ var ilibDataLoader = function(source) {
         if ((match = defineLocaleDataPattern.exec(partial)) !== null) {
             // console.log(">>>>>>>>>> found a match");
             output += partial.substring(0, match.index);
-            if (options.assembly === "dynamicdata") {
+            if (options.assembly !== "assembled") {
                 output +=
                     "ilib.WebpackLoader = require('./WebpackLoader.js');\n" +
                     "ilib.setLoaderCallback(ilib.WebpackLoader(ilib));\n" +
@@ -298,9 +298,12 @@ var ilibDataLoader = function(source) {
                 var files = emitLocaleData(this._compilation, options);
                 var outputPath = path.join(outputRoot, "locales");
                 files.forEach(function(locale) {
-                    output += "require('" + path.join(outputPath, locale + (locale === "ilibmanifest" ? ".json" : ".js")) + "');\n";
+                    if (locale !== "ilibmanifest") {
+                        output += "require('" + path.join(outputPath, locale + ".js") + "').installLocale(ilib);\n";
+                    }
                 });
                 output +=
+                    "require('./ilib-unpack.js');\n" +
                     "ilib._dyncode = false;\n" +
                     "ilib._dyndata = false;\n";
             }
