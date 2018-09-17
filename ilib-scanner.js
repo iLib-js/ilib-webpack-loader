@@ -96,25 +96,29 @@ function loadIlibClasses() {
 }
 
 function scanFileOrDir(pathName) {
-    stat = fs.statSync(pathName);
-    if (stat) {
-        if (stat.isDirectory()) {
-            var list = fs.readdirSync(pathName);
+    try {
+        stat = fs.statSync(pathName);
+        if (stat) {
+            if (stat.isDirectory()) {
+                var list = fs.readdirSync(pathName);
 
-            list.forEach(function (file) {
-                scanFileOrDir(path.join(pathName, file));
-            });
-        } else if (!pathName.startsWith("ilib")) {
-            loadIlibClasses();
-            var data = fs.readFileSync(pathName, "utf-8");
+                list.forEach(function (file) {
+                    scanFileOrDir(path.join(pathName, file));
+                });
+            } else if (!pathName.startsWith("ilib")) {
+                loadIlibClasses();
+                var data = fs.readFileSync(pathName, "utf-8");
 
-            classes.forEach(function(cls) {
-                if (data.indexOf(cls) > -1) {
-                    classSet.add(cls);
-                }
-            });
+                classes.forEach(function(cls) {
+                    if (data.indexOf(cls) > -1) {
+                        classSet.add(cls);
+                    }
+                });
+            }
+        } else {
+            console.log("Error: could not access " + pathName);
         }
-    } else {
+    } catch (e) {
         console.log("Error: could not access " + pathName);
     }
 }
