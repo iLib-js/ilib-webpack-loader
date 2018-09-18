@@ -1,5 +1,14 @@
 var path = require("path");
 
+var IlibWebpackPlugin = require("ilib-webpack-plugin");
+
+var options = {
+	// edit these for the list of locales you need
+	locales: ["en-US", "fr-FR", "de-DE", "ko-KR"],
+	assembly: "dynamicdata",
+	compilation: "uncompiled"
+};
+
 module.exports = {
     // ilib bundle entry point here 
     entry: path.resolve("./ilib-metafile.js"),
@@ -16,13 +25,11 @@ module.exports = {
             test: /\.(js|html)$/,        // Run this loader on all .js files
             use: {
                 loader: "../ilib-webpack-loader.js",
-                options: {
-                    // edit these for the list of locales you need
-                    locales: ["en-US", "fr-FR", "de-DE", "ko-KR"],
-                    assembly: "dynamicdata",
-                    compilation: "uncompiled"
-                }
+                options: options
             }
         }]
-    }
+    },
+    plugins: [
+        new IlibWebpackPlugin(options)
+    ]
 };
