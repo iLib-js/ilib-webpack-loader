@@ -304,20 +304,20 @@ and data loading style
 1. Include a special ilib file at the start of your app that is used to load all of the iLib classes and
 locale data:
 
-   ```
+   ```javascript
    // this code installs the components that know how to load the locale data:
    const ilibdata = require("ilib/lib/ilib-getdata.js");
    ```
 
 1. Make your code require or import ilib classes directly:
 
-   ```
+   ```javascript
    const DateFmt = require("ilib/lib/DateFmt");
    ```
    
    or, under ES6, use import instead:
    
-   ```
+   ```javascript
    import DateFmt from "ilib/lib/DateFmt";
    ```
 
@@ -359,7 +359,7 @@ Step-by-step:
    "fr-FR", the information from the dateformat.json files from the previous point
    would go into:
 
-   ```javascript
+   ```
    ilib/js/locale/dateformats.json -> root.js
    ilib/js/locale/en/dateformats.json -> en.js
    ilib/js/locale/en-US/dateformats.json -> en-US.js
@@ -533,7 +533,7 @@ ilib-webpack-plugin via npm.
 
 1. Change directory to the root of your web app, and run `ilib-scanner` with the following options:
 
-   ```javascript
+   ```
    ilib-scanner --assembly=assembled --locales=en-US,fr-FR --compilation=compiled ilib-include.js
    ```
    
@@ -576,7 +576,7 @@ ilib-webpack-plugin via npm.
 
 1. Update your html files to include the new custom build of ilib with a standard script tag:
 
-    ```javascript
+    ```html
     <script src="/path/to/ilib.js"></script>
     <script>
        // All of the classes have been copied to the global scope here, so
@@ -654,7 +654,7 @@ module.exports = {
 
 ilib-metafile.js:
 
-```javascript
+```html
 var ilib = require("ilib/lib/ilib.js");
    
 // assign each class to a subproperty of "ilib"
@@ -716,7 +716,7 @@ in the ilib sources under the docs/demo directory. See
 for details. You can try it out for yourself if you git clone the ilib project,
 change directory to ilib/docs/demo and then use the instructions above to create
 a customized version of ilib for [projects that are not currently using 
-webpack](#what-if-my-website-project-is-not-currently-using-webpack-).
+webpack](#what-if-my-website-project-is-not-currently-using-webpack).
 
 
 
