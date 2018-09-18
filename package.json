@@ -1,9 +1,9 @@
 {
     "name": "ilib-webpack-loader",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "main": "./ilib-webpack-loader.js",
     "bin": {
-      "ilib-scanner": "./ilib-scanner.js"
+        "ilib-scanner": "./ilib-scanner.js"
     },
     "description": "A loader for webpack that knows how to load ilib locale data files.",
     "license": "Apache-2.0",
@@ -54,6 +54,7 @@
         "test": "ant test"
     },
     "dependencies": {
+        "ilib": "file:../ilib/dist/ilib.tgz",
         "loader-utils": "^1.0.0",
         "options-parser": "^0.4.0"
     }
