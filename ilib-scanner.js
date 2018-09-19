@@ -154,7 +154,7 @@ var webpackConfigContents =
     " */\n\n" +
     "var path = require('path');\n" +
     "var webpack = require('webpack');\n" +
-    "var IlibWebpackPlugin = require('ilib-webpack-plugin2');\n" +
+    "var IlibWebpackPlugin = require('ilib-webpack-plugin');\n" +
     "module.exports = {\n" +
     "    entry: path.resolve('./" + outputFile + "'),\n" +
     "    output: {\n" +
