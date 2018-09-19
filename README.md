@@ -77,7 +77,7 @@ support, but the locale data for those files is still pretty big.
 If your app does not support that many locales, you can get a significantly
 smaller footprint by specifying a smaller set of them in your webpack.config.js.
 
-Locales should be specified using [https://en.wikipedia.org/wiki/IETF_language_tag](BCP-47 locale tags)
+Locales should be specified using [BCP-47 locale tags](https://en.wikipedia.org/wiki/IETF_language_tag)
 (aka. IETF tags). This uses ISO 639 codes for languages, ISO 15924 codes for scripts,
 and ISO 3166 codes for regions, separated by dashes. eg. US English is "en-US" and
 Chinese for China written with the simplified script is "zh-Hans-CN".
@@ -88,18 +88,20 @@ There are three major ways to include the code and locale data into your webpack
 assembled, dynamic data, and dynamic.
 
 1. Assembled. You can include the data along with the code into the ilib bundle as a
-   single file. Doing this has a number of advantages:
+   single file. 
 
-  - everything is loaded and cached at once
-  - all ilib classes are available for synchronous use as soon as the browser has
-    loaded the js file. No async calls, callbacks, or promises needed!
-  - less files to move around and/or to check into your repo
+   Advantages:
 
-   Of course, there are a few disadvantages as well:
+   - everything is loaded and cached at once
+   - all ilib classes are available for synchronous use as soon as the browser has
+     loaded the js file. No async calls, callbacks, or promises needed!
+   - less files to move around and/or to check into your repo
+ 
+   Disadvantages:
 
-  - that single file can get large if you have a lot of locales or classes (very large!)
-  - you would be loading all locales at once, even if you only use one locale at a time,
-    meaning extra network bandwidth and load time for data that the user isn't using
+   - that single file can get large if you have a lot of locales or classes (very large!)
+   - you would be loading all locales at once, even if you only use one locale at a time,
+     meaning extra network bandwidth and load time for data that the user isn't using
 
    Assembled data is a good choice if you only support a few locales or if you only use
    a few ilib classes. The first time a user hits your website, they download a
