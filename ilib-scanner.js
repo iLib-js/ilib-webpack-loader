@@ -103,7 +103,9 @@ function scanFileOrDir(pathName) {
                 var list = fs.readdirSync(pathName);
 
                 list.forEach(function (file) {
-                    scanFileOrDir(path.join(pathName, file));
+                    if (file !== "node_modules") {
+                        scanFileOrDir(path.join(pathName, file));
+                    }
                 });
             } else if (!pathName.startsWith("ilib")) {
                 loadIlibClasses();
@@ -154,7 +156,7 @@ var webpackConfigContents =
     " */\n\n" +
     "var path = require('path');\n" +
     "var webpack = require('webpack');\n" +
-    "var IlibWebpackPlugin = require('ilib-webpack-plugin2');\n" +
+    "var IlibWebpackPlugin = require('ilib-webpack-plugin');\n" +
     "module.exports = {\n" +
     "    entry: path.resolve('./" + outputFile + "'),\n" +
     "    output: {\n" +
@@ -198,5 +200,4 @@ var webpackConfigContents =
 fs.writeFileSync(webpackConfigPath, webpackConfigContents, "utf-8");
 
 console.log(`Done. Output is in ${outputPath} and ${webpackConfigPath}`);
-
 
