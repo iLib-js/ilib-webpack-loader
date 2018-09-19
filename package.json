@@ -54,7 +54,7 @@
         "test": "ant test"
     },
     "dependencies": {
-        "ilib": "file:../ilib/dist/ilib.tgz",
+        "ilib": ">13.0.0",
         "loader-utils": "^1.0.0",
         "options-parser": "^0.4.0"
     }
