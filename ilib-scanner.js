@@ -103,7 +103,9 @@ function scanFileOrDir(pathName) {
                 var list = fs.readdirSync(pathName);
 
                 list.forEach(function (file) {
-                    scanFileOrDir(path.join(pathName, file));
+                    if (file !== "node_modules") {
+                        scanFileOrDir(path.join(pathName, file));
+                    }
                 });
             } else if (!pathName.startsWith("ilib")) {
                 loadIlibClasses();
@@ -198,5 +200,4 @@ var webpackConfigContents =
 fs.writeFileSync(webpackConfigPath, webpackConfigContents, "utf-8");
 
 console.log(`Done. Output is in ${outputPath} and ${webpackConfigPath}`);
-
 
