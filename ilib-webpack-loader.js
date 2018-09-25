@@ -188,9 +188,11 @@ function emitLocaleData(compilation, options) {
             if (options.debug) console.log("Creating " + fileName);
     
             var outputFile = path.join(outputPath, fileName + ".js");
-            if (options.debug) console.log("Writing to " + outputFile);
-            makeDirs(path.dirname(outputFile));
-            fs.writeFileSync(outputFile, "", "utf-8"); // write empty file
+            if (!fs.existsSync(outputFile)) {
+                if (options.debug) console.log("Writing to " + outputFile);
+                makeDirs(path.dirname(outputFile));
+                fs.writeFileSync(outputFile, "", "utf-8"); // write empty file
+            }
         }.bind(this));
     
         emptyLocaleDataFilesEmitted = true;
@@ -299,7 +301,8 @@ var ilibDataLoader = function(source) {
                 var outputPath = path.join(outputRoot, "locales");
                 files.forEach(function(locale) {
                     if (locale !== "ilibmanifest") {
-                        output += "require('" + path.join(outputPath, locale + ".js") + "').installLocale(ilib);\n";
+                        var name = "locale" + locale.replace(/-/g, '_');
+                        output += "var " + name + " = require('" + path.join(outputPath, locale + ".js") + "'); " + name + " && typeof(" + name + ".installLocale) === 'function' && " + name + ".installLocale(ilib);\n";
                     }
                 });
                 output +=
@@ -337,7 +340,7 @@ var ilibDataLoader = function(source) {
                     "            System.import(/* webpackChunkName: '" + file + "' */ '" + path.join(outputPath, file + ".json") + "').then(function(module) {\n" +
                     "                callback(module);\n" :
                     "            System.import(/* webpackChunkName: '" + file + "' */ '" + path.join(outputPath, file + ".js") + "').then(function(module) {\n" +
-                    "                module.installLocale(ilib);\n" +
+                    "                module && typeof(module.installLocale) === \"function\" && module.installLocale(ilib);\n" +
                     "                callback(module);\n";
 
                 output +=
