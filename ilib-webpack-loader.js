@@ -75,7 +75,7 @@ function findIlibRoot() {
 
 /**
  * Convert a set to an array.
- * 
+ *
  * @param {Set} set to convert
  * @returns an array with the contents of the set
  */
@@ -108,14 +108,14 @@ function calcDataRoot(options) {
 var emptyLocaleDataFilesEmitted = false;
 
 /**
- * Produce a set of js files that will eventually contain 
+ * Produce a set of js files that will eventually contain
  * the necessary locale data. These files are created
  * as empty files now so that the dependency graph of the
  * compilation is correct. Then, later, the ilib webpack
- * plugin will fill in the contents of these files once 
+ * plugin will fill in the contents of these files once
  * all other js files have been processed and we know for
  * sure what the contents should be. These js files are
- * created with one per locale part. For example, the 
+ * created with one per locale part. For example, the
  * locale "en-US" has the following parts:
  *
  * <ul>
@@ -141,37 +141,38 @@ var emptyLocaleDataFilesEmitted = false;
  * were emitted by this function
  */
 function emitLocaleData(compilation, options) {
-    if (!emptyLocaleDataFilesEmitted) {
-        var outputDir = compilation.options.output.path;
-        var outputSet = new Set();
-    
-        var locales = options.locales;
-    
-        if (options.debug) console.log("Creating locale data for locales " + locales.join(","));
-    
-        locales.forEach(function(locale) {
-            var l = new Locale(locale);
-    
-            outputSet.add("root");
-            outputSet.add(l.language);
-    
-            if (l.script) {
-                outputSet.add(l.language + "-" + l.script);
-                if (l.region) {
-                    outputSet.add(l.language + "-" + l.script + "-" + l.region);
-                }
-            }
+    var outputDir = compilation.options.output.path;
+    var outputSet = new Set();
+
+    var locales = options.locales;
+
+    if (options.debug) console.log("Creating locale data for locales " + locales.join(","));
+
+    locales.forEach(function(locale) {
+        var l = new Locale(locale);
+
+        outputSet.add("root");
+        outputSet.add(l.language);
+
+        if (l.script) {
+            outputSet.add(l.language + "-" + l.script);
             if (l.region) {
-                outputSet.add(l.language + "-" + l.region);
-                outputSet.add("und-" + l.region);
+                outputSet.add(l.language + "-" + l.script + "-" + l.region);
             }
-        }.bind(this));
-    
-        // Write out the manifest file so that the WebpackLoader knows when to attempt
-        // to load data and when not to. If a file it is attempting to load is not in
-        // the manifest, it does not have to load the locale files that would contain it,
-        // which leads to 404s.
-        var files = toArray(outputSet);
+        }
+        if (l.region) {
+            outputSet.add(l.language + "-" + l.region);
+            outputSet.add("und-" + l.region);
+        }
+    }.bind(this));
+
+    // Write out the manifest file so that the WebpackLoader knows when to attempt
+    // to load data and when not to. If a file it is attempting to load is not in
+    // the manifest, it does not have to load the locale files that would contain it,
+    // which leads to 404s.
+    var files = toArray(outputSet);
+
+    if (!emptyLocaleDataFilesEmitted) {
         var manifestObj =  {
             files: files.map(function(name) {
                 return name + ".js";
@@ -181,12 +182,12 @@ function emitLocaleData(compilation, options) {
         makeDirs(outputPath);
         if (options.debug) console.log("Emitting " + path.join(outputPath, "ilibmanifest.json"));
         fs.writeFileSync(path.join(outputPath, "ilibmanifest.json"), JSON.stringify(manifestObj), "utf-8");
-    
+
         // now write out all the empty files
-        
+
         files.forEach(function(fileName) {
             if (options.debug) console.log("Creating " + fileName);
-    
+
             var outputFile = path.join(outputPath, fileName + ".js");
             if (!fs.existsSync(outputFile)) {
                 if (options.debug) console.log("Writing to " + outputFile);
@@ -194,12 +195,12 @@ function emitLocaleData(compilation, options) {
                 fs.writeFileSync(outputFile, "", "utf-8"); // write empty file
             }
         }.bind(this));
-    
+
         emptyLocaleDataFilesEmitted = true;
-        
-        // console.log("Done emitting locale data.");
-        return files.concat(["ilibmanifest"]);
     }
+
+    // console.log("Done emitting locale data.");
+    return files.concat(["ilibmanifest"]);
 }
 
 var ilibDataLoader = function(source) {
@@ -298,13 +299,15 @@ var ilibDataLoader = function(source) {
                     "ilib._dyndata = true;\n";
             } else {
                 var files = emitLocaleData(this._compilation, options);
-                var outputPath = path.join(outputRoot, "locales");
-                files.forEach(function(locale) {
-                    if (locale !== "ilibmanifest") {
-                        var name = "locale" + locale.replace(/-/g, '_');
-                        output += "var " + name + " = require('" + path.join(outputPath, locale + ".js") + "'); " + name + " && typeof(" + name + ".installLocale) === 'function' && " + name + ".installLocale(ilib);\n";
-                    }
-                });
+                if (files) {
+                    var outputPath = path.join(outputRoot, "locales");
+                    files.forEach(function(locale) {
+                        if (locale !== "ilibmanifest") {
+                            var name = "locale" + locale.replace(/-/g, '_');
+                            output += "var " + name + " = require('" + path.join(outputPath, locale + ".js") + "'); " + name + " && typeof(" + name + ".installLocale) === 'function' && " + name + ".installLocale(ilib);\n";
+                        }
+                    });
+                }
                 output +=
                     "require('./ilib-unpack.js');\n" +
                     "ilib._dyncode = false;\n" +
