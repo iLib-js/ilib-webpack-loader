@@ -286,6 +286,7 @@ var ilibDataLoader = function(source) {
     var processDefineLocaleData = function (text) {
         var partial = text;
         var output = "";
+        var root = options.ilibRoot || 'ilib';
 
         defineLocaleDataPattern.lastIndex = 0;
         if ((match = defineLocaleDataPattern.exec(partial)) !== null) {
@@ -293,7 +294,7 @@ var ilibDataLoader = function(source) {
             output += partial.substring(0, match.index);
             if (options.assembly !== "assembled") {
                 output +=
-                    "ilib.WebpackLoader = require('./WebpackLoader.js');\n" +
+                    "ilib.WebpackLoader = require('" + root + "/lib/WebpackLoader.js');\n" +
                     "ilib.setLoaderCallback(ilib.WebpackLoader(ilib));\n" +
                     "ilib._dyncode = false;\n" +
                     "ilib._dyndata = true;\n";
@@ -309,7 +310,6 @@ var ilibDataLoader = function(source) {
                     });
                 }
                 output +=
-                    "require('./ilib-unpack.js');\n" +
                     "ilib._dyncode = false;\n" +
                     "ilib._dyndata = false;\n";
             }
