@@ -8,7 +8,4 @@ ilib.NumFmt = require("ilib/lib/NumFmt.js");
 // This unpacks the above classes to the global scope
 require("ilib/lib/ilib-unpack.js");
 
-// Must be at the end of meta file to generate the locale data files
-require("ilib/lib/ilib-getdata.js");
-
 module.exports = ilib;

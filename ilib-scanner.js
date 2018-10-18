@@ -135,15 +135,14 @@ var metaFileContents =
     " * Do not hand edit or else your changes may be overwritten and lost.\n" +
     " * Instead, re-run the scanner to generate a new version of this file.\n" +
     " */\n\n" +
-    'var ilib = require("' + (ilibRoot || "ilib") + '/lib/ilib.js");\n\n';
+    'var ilib = require("' + (ilibRoot || "ilib") + '");\n\n';
 
 classSet.forEach(function(cls) {
     metaFileContents += 'ilib.' + cls + ' = require("' + (ilibRoot || "ilib") + '/lib/' + cls + '.js");\n';
 });
 
 metaFileContents +=
-    '\nrequire("' + (ilibRoot || "ilib") + '/lib/ilib-unpack.js");\n' +
-    'require("' + (ilibRoot || "ilib") + '/lib/ilib-getdata.js");\n\n' +
+    '\nrequire("' + (ilibRoot || "ilib") + '/lib/ilib-unpack.js");\n\n' +
     'module.exports = ilib;\n';
 
 fs.writeFileSync(outputPath, metaFileContents, "utf-8");
