@@ -172,7 +172,7 @@ function emitLocaleData(compilation, options) {
     // which leads to 404s.
     var files = toArray(outputSet);
 
-    if (!emptyLocaleDataFilesEmitted) {
+    if (!compilation.compiler.watchMode && !emptyLocaleDataFilesEmitted) {
         var manifestObj =  {
             files: files.map(function(name) {
                 return name + ".js";
@@ -180,8 +180,11 @@ function emitLocaleData(compilation, options) {
         };
         var outputPath = path.join(outputDir, "locales");
         makeDirs(outputPath);
-        if (options.debug) console.log("Emitting " + path.join(outputPath, "ilibmanifest.json"));
-        fs.writeFileSync(path.join(outputPath, "ilibmanifest.json"), JSON.stringify(manifestObj), "utf-8");
+        var manifestPath = path.join(outputPath, "ilibmanifest.json");
+        if (!fs.existsSync(manifestPath)) {
+            if (options.debug) console.log("Emitting " + path.join(outputPath, "ilibmanifest.json"));
+            fs.writeFileSync(manifestPath, JSON.stringify(manifestObj), "utf-8");
+        }
 
         // now write out all the empty files
 
