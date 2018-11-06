@@ -50,7 +50,7 @@ var defineLocaleDataPattern = /\/\/\s*!defineLocaleData/g;
 
 var ilibDataLoader = function(source) {
     if (!this._compilation.ilibWebpackPlugin) {
-        throw new Error("ilib-webpack-loader cannot run without the ilib-webpack-plugin as well. Make sure to add the ilib-wepack-plugin into your plugins section in our webpack.config.js file.");
+        throw new Error("ilib-webpack-loader cannot run without the ilib-webpack-plugin as well. Make sure to add ilib-webpack-plugin into the plugins section of your webpack.config.js file.");
     }
 
     const options = getOptions(this) || {};
