@@ -1,6 +1,6 @@
 {
     "name": "ilib-webpack-loader",
-    "version": "1.0.6",
+    "version": "1.1.0",
     "main": "./ilib-webpack-loader.js",
     "bin": {
         "ilib-scanner": "./ilib-scanner.js"
@@ -48,10 +48,7 @@
         "url": "https://github.com/iLib-js/ilib-webpack-loader.git"
     },
     "engines": {
-        "node": ">=0.12"
-    },
-    "scripts": {
-        "test": "ant test"
+        "node": ">=4.0"
     },
     "dependencies": {
         "loader-utils": "^1.0.0",
