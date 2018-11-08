@@ -13,7 +13,7 @@ would form files that are tens, if not hundreds, of megabytes in size. That is t
 acceptable to put on a web page!
 
 The reality is that the majority of web sites only support a limited set of locales and
-use only need a limited set of international classes, and only need the locale data for those 
+use only need a limited set of international classes, and only need the locale data for those
 specific locales and classes.
 
 Fortunately, there is a solution. Webpack to the rescue! Webpack can analyze
@@ -88,7 +88,7 @@ There are three major ways to include the code and locale data into your webpack
 assembled, dynamic data, and dynamic.
 
 1. Assembled. You can include the data along with the code into the ilib bundle as a
-   single file. 
+   single file.
 
    Advantages:
 
@@ -96,7 +96,7 @@ assembled, dynamic data, and dynamic.
    - all ilib classes are available for synchronous use as soon as the browser has
      loaded the js file. No async calls, callbacks, or promises needed!
    - less files to move around and/or to check into your repo
- 
+
    Disadvantages:
 
    - that single file can get large if you have a lot of locales or classes (very large!)
@@ -108,7 +108,7 @@ assembled, dynamic data, and dynamic.
    larger-than-needed ilib file, but then it is cached and everything after that is simple.
 
 2. Dynamic Data. Webpack has the ability to lazy-load bundles as they are needed. With
-   this type of configuration, the code is assembled into a single file, but the locale 
+   this type of configuration, the code is assembled into a single file, but the locale
    data goes into separate webpack bundles, and webkit lazy-loads those bundles on the
    fly as they are needed.
 
@@ -125,15 +125,15 @@ assembled, dynamic data, and dynamic.
    - the number of locale bundle files can get unwieldy if you have a lot of locales
    - since webpack loads the bundles asynchronously, you must use the ilib classes
      asynchronously with callbacks or promises. Alternately, you must pre-initialize the
-     locale data asynchronously and then wait for the load to finish in a jquery 
-     "document ready" kind of function before using the ilib classes synchronously 
+     locale data asynchronously and then wait for the load to finish in a jquery
+     "document ready" kind of function before using the ilib classes synchronously
      after that.
 
    Using dynamic data is a good choice if you have a lot of locales or use a lot of
    different ilib classes.
 
 3. Dynamic. This mode uses dynamically loaded code and dynamically loaded data. Only
-a few platforms, such as nodejs or rhino, support this mode. It is not available on 
+a few platforms, such as nodejs or rhino, support this mode. It is not available on
 web pages. In this mode, you require() classes you need, and the data will be loaded
 synchronously from disk.
 
@@ -198,7 +198,7 @@ bundle for "assembled" mode, or it is written out into separate files that becom
 their own webpack bundles for "dynamicdata" mode. This minimizes the size of
 the locale data in both modes, and also allows the data to be loaded dynamically
 in "dynamicdata" mode.
- 
+
 ## Using the Loader and Plugin in Your Own Webpack Config
 
 If you would like to use the loader and plugin in your own webpack configuration
@@ -210,7 +210,7 @@ to create a minimal ilib, here are the steps:
   npm install --save-dev ilib ilib-webpack-loader ilib-webpack-plugin
   ```
 
-1. Examine the section above on configuration choices and then choose your locales 
+1. Examine the section above on configuration choices and then choose your locales
 and data loading style
 
 1. In your webpack configuration, update the rules section like this:
@@ -221,11 +221,12 @@ and data loading style
             locales: ["en-US", "de-DE", "fr-FR", "it-IT", "ja-JP", "ko-KR", "zh-Hans-CN"],
             assembly: "dynamicdata",
             compilation: 'compiled',
-            size: 'custom'
+            size: 'custom',
+            tempDir: 'assets'
         };
-        
+
         ...
-        
+
         // inside the config:
         module: {
             rules: [{
@@ -239,7 +240,7 @@ and data loading style
    ```
 
    and the plugins section like this:
-   
+
    ```javascript
         plugins: [
             new IlibWebpackPlugin(options)
@@ -249,14 +250,18 @@ and data loading style
    The locales options to the loader and plugin are self-explanatory. Make sure to pass the same set of
    locales to both by defining the options object earlier in the file. If you pass different options to
    the loader and plugin, you will get inconsistent results!
-   
-   The assembly option can be one of "assembled" or "dynamicdata". 
-   
+
+   The assembly option can be one of "assembled" or "dynamicdata".
+
    The compilation option can be one of "compiled" or "uncompiled".
-   
-   The size option should always be set to "custom" when you are creating your own version of iLib. If 
-   you choose any of the pre-assembled sizes, you will get a fixed set of iLib classes, which is probably 
+
+   The size option should always be set to "custom" when you are creating your own version of iLib. If
+   you choose any of the pre-assembled sizes, you will get a fixed set of iLib classes, which is probably
    not what you want.
+
+   The tempDir option is a directory where the ilib loader and plugin can write out the extracted/filtered
+   locale data files so that they can be included into the webpack bundle. Make sure this directory is
+   outside of your bundle output path.
 
 1. Put ilib into its own vendor bundle:
 
@@ -316,11 +321,11 @@ locale data:
    ```javascript
    const DateFmt = require("ilib/lib/DateFmt");
    ```
-   
-   or, under ES6, use import instead:
-   
+
+   or, under ES6, use import from the ilib-es6 wrappers project instead:
+
    ```javascript
-   import DateFmt from "ilib/lib/DateFmt";
+   import DateFmt from "ilib-es6/lib/DateFmt";
    ```
 
 # How it Works
@@ -332,7 +337,7 @@ class, the loader will search it looking for a special comment that documents ex
 types of locale data this class needs. Additionally, in dynamicdata mode, the loader will
 generate a set of empty locale data files that get added to the bundle.
 
-At the end of the loading, the plugin runs. In assembled mode, it will make sure that 
+At the end of the loading, the plugin runs. In assembled mode, it will make sure that
 all of the required locale data files for the data types and locales are added to the
 bundle. In dynamic data mode, it will fill in actual contents into the locale data
 files that the loader previously created and make sure webpack generates bundles for
@@ -352,12 +357,11 @@ Step-by-step:
 
    This indicates that it uses the various `dateformats.json` files in the ilib locale
    directory. (Look in ...node_modules/ilib/js/data/locale/* if you're curious.) You can
-   use these comments in your own code if you need to load in extra non-locale data files 
-   such as character sets, character mapping files, or time zones that are not 
+   use these comments in your own code if you need to load in extra non-locale data files
+   such as character sets, character mapping files, or time zones that are not
    automatically included by the loader.
-1. When the ilib-webpack-loader encounters the ilib-getdata.js file, it recognizes
-   a special comment in there which causes it to emit all of the locale data it has
-   collected so far. In the example above, if the locales are set to "en-US" and
+1. When the all of the loaders are finished running, the ilib-webpack-plugin will emit
+   the locale data files to disk. In the example above, if the locales are set to "en-US" and
    "fr-FR", the information from the dateformat.json files from the previous point
    would go into:
 
@@ -371,8 +375,8 @@ Step-by-step:
    ilib/js/locale/und/FR/dateformats.json -> und-FR.js
    ```
 
-   In assembled mode, the loader adds require() calls for these 7 new files so that 
-   they are included directly into the ilib bundle. Alternately, in dynamicdata mode, 
+   In assembled mode, the loader adds require() calls for these 7 new files so that
+   they are included directly into the ilib bundle. Alternately, in dynamicdata mode,
    it would add calls to System.import() for each of them which causes
    webpack to issue each file as its own separate bundle that can be loaded
    dynamically.
@@ -401,7 +405,7 @@ The answer is footprint. By splitting the files, each piece of locale data is in
 only once. For example, the root.js contains a lot of non-locale data that does not need to be
 replicated in each of those two files. For example, the Unicode character type properties that the
 CType functions use are the same for all locales. Each Unicode character is unambiguous
-and does not depend on which locale you are using. A digit is always a digit. Why have two 
+and does not depend on which locale you are using. A digit is always a digit. Why have two
 copies of that info on your web server? If the user's browser loads `ilib.root.js` once,
 it can cache it and not load it again, no matter the locale. This gets even more important
 when you have more than 2 locales at once.
@@ -441,7 +445,8 @@ contains the uncompressed code and locale data files. Here are the changes.
         assembly: "dynamicdata",
         compilation: "uncompiled",           // <- These are the new parts!
         ilibRoot: "full/path/to/your/ilib/clone", // <- These are the new parts!
-        size: 'custom'
+        size: 'custom',
+        tempDir: 'assets'
     };
 
     module.exports = [{
@@ -473,25 +478,25 @@ contains the uncompressed code and locale data files. Here are the changes.
    }];
 ```
 
-Note that the "entry" property has changed from the examples above, and there 
+Note that the "entry" property has changed from the examples above, and there
 is a new value for the "compilation" option passed to the loader. Also, a new
 parameter "ilibRoot" points to the root of the iLib clone.
 
 
 # What if my Website Project is not Currently Using Webpack?
 
-You can still use webpacked ilib! If you have javascript in js and html 
-files, but you currently don't use webpack for your own project, you have 
+You can still use webpacked ilib! If you have javascript in js and html
+files, but you currently don't use webpack for your own project, you have
 have two choices:
 
-1. Use a standard build of ilib from the [ilib releases page on github](https://github.com/iLib-js/iLib/releases). 
-   
+1. Use a standard build of ilib from the [ilib releases page on github](https://github.com/iLib-js/iLib/releases).
+
 1. Build your own customized version of ilib
 
 Using Standard Builds
 -----
 
-You can use a pre-built version of ilib based on releases published on 
+You can use a pre-built version of ilib based on releases published on
 [the ilib project's releases page on github](https://github.com/iLib-js/iLib/releases).
 
 Look inside ilib-&lt;version>.tgz or ilib-&lt;version>.zip for the standard
@@ -501,14 +506,14 @@ Releases of ilib come with three
 pre-built sizes: core, standard, and full. The core size includes a minimal
 set of classes that pretty much only allows you to do simple things like
 translating text. The standard size has all the basics such as date formatting
-and number formatting, as well as text translation and a few other classes. 
+and number formatting, as well as text translation and a few other classes.
 The full size has every class that ilib contains.
 
-Releases also now come with the fully assembled and dynamicdata versions of 
-each size for web sites or node. The locale data that comes with each is for the 
+Releases also now come with the fully assembled and dynamicdata versions of
+each size for web sites or node. The locale data that comes with each is for the
 top 20 locales on the Internet by volume of traffic.
 
-For fully dynamic code and locale data loading for use with nodejs or rhino/nashorn, 
+For fully dynamic code and locale data loading for use with nodejs or rhino/nashorn,
 you can install the latest ilib from npm.
 
 Using a standard release of ilib is convenient, but it may not contain the locale
@@ -530,7 +535,7 @@ ilib-webpack-plugin via npm.
 1. The ilib-webpack-loader module contains a node-based tool that can scan your code looking
    for references to ilib classes. The tool is called `ilib-scanner`. If your node_modules/.bin
    directory is in your path, you can execute this tool directly on the comand-line. This tool
-   will generate both an ilib metafile that will include only the classes you need, 
+   will generate both an ilib metafile that will include only the classes you need,
    and a webpack.config.js file that configures webpack to create that customized ilib.js file.
 
 1. Change directory to the root of your web app, and run `ilib-scanner` with the following options:
@@ -538,16 +543,16 @@ ilib-webpack-plugin via npm.
    ```
    ilib-scanner --assembly=assembled --locales=en-US,fr-FR --compilation=compiled ilib-include.js
    ```
-   
+
    The "assembly" parameter can have the value of either "assembled" and "dynamicdata". Default is
    "assembled".
-   
-   The value of the locales parameter is a comma-separated list of locales that your app needs 
+
+   The value of the locales parameter is a comma-separated list of locales that your app needs
    to support. In our example, this is en-US for English/US and fr-FR for French/France.
-    
-   The "compilation" parameter is one of "compiled" or "uncompiled". 
-   
-   You must give the path to the metafile file you would like to generate. In this 
+
+   The "compilation" parameter is one of "compiled" or "uncompiled".
+
+   You must give the path to the metafile file you would like to generate. In this
    example, that is "ilib-include.js". The scanner will fill this file with explicit "require"
    calls for any ilib class your code uses.
 
@@ -567,9 +572,9 @@ ilib-webpack-plugin via npm.
 
    If you have requested a dynamicdata build, you must make sure the `output.publicPath`
    property is set to the directory part of the URL where webpack can load the locale data
-   files. For example, if you put ilib and the locale data files underneath 
+   files. For example, if you put ilib and the locale data files underneath
    "http://www.mycompany.com/scripts/js/ilib.js", then set the publicPath property to "/scripts/js/".
-   Webpack uses XHR requests to the server where it loaded ilib.js from in order to load the 
+   Webpack uses XHR requests to the server where it loaded ilib.js from in order to load the
    corresponding locale data files under the path given in the publicPath directory.
 
 1. Run "webpack" in the dir with the new webpack.config.js in it. It will churn for a while and
@@ -596,8 +601,8 @@ ilib-webpack-plugin via npm.
 Et voila. You are done.
 
 Note that ilib automatically copies its public classes up to the global scope,
-so you can just use them normally, not as a property of the "ilib" namespace. 
-If you used ilib 12.0 or earlier, this is the same as how it worked before, so 
+so you can just use them normally, not as a property of the "ilib" namespace.
+If you used ilib 12.0 or earlier, this is the same as how it worked before, so
 if you are upgrading to 13.0 or higher, you will probably
 not need to change your code. If you don't want to pollute your global scope,
 you can use all of the classes via the ilib namespace. Just remove the
@@ -616,7 +621,7 @@ All of the code from the snippets above:
 
 webpack.config.js:
 
-```javascript 
+```javascript
 var path = require("path");
 
 var IlibWebpackPlugin = require("ilib-webpack-plugin");
@@ -625,11 +630,12 @@ var options = {
     // edit these for the list of locales you need
     locales: ["en-US", "fr-FR", "de-DE", "ko-KR"],
     assembly: "dynamicdata",
-    compilation: "uncompiled"
+    compilation: "uncompiled",
+    tempDir: 'assets'
 };
 
 module.exports = {
-    // ilib bundle entry point here 
+    // ilib bundle entry point here
     entry: path.resolve("./ilib-metafile.js"),
     output: {
         filename: 'ilib-custom.js',       // you can change this if you want
@@ -658,7 +664,7 @@ ilib-metafile.js:
 
 ```html
 var ilib = require("ilib/lib/ilib.js");
-   
+
 // assign each class to a subproperty of "ilib"
 ilib.Locale = require("ilib/lib/Locale.js");
 ilib.DateFmt = require("ilib/lib/DateFmt.js");
@@ -681,7 +687,7 @@ index.html:
 <meta charset="UTF-8">
 <script src="output/ilib-custom.js"></script>
 <script>
-    // all of the classes have been copied to the global scope here, so 
+    // all of the classes have been copied to the global scope here, so
     // you can just start using them:
     new DateFmt({
         locale: "fr-FR",
@@ -713,11 +719,11 @@ alert dialog.
 
 A working example of a customized version of ilib for a site that does not currently
 use webpack can be found in the ilib demo app. This is included
-in the ilib sources under the docs/demo directory. See 
+in the ilib sources under the docs/demo directory. See
 [the ilib demo app on github](https://github.com/iLib-js/iLib/tree/development/docs/demo)
 for details. You can try it out for yourself if you git clone the ilib project,
 change directory to ilib/docs/demo and then use the instructions above to create
-a customized version of ilib for [projects that are not currently using 
+a customized version of ilib for [projects that are not currently using
 webpack](#what-if-my-website-project-is-not-currently-using-webpack).
 
 
