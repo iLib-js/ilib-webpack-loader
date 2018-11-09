@@ -156,6 +156,15 @@ var webpackConfigContents =
     "var path = require('path');\n" +
     "var webpack = require('webpack');\n" +
     "var IlibWebpackPlugin = require('ilib-webpack-plugin');\n" +
+    "var options = {\n" +
+    "    locales: " + JSON.stringify(locales) + ",\n" +
+    "    assembly: '" + options.opt.assembly + "',\n" +
+    "    compilation: '" + options.opt.compilation + "',\n" +
+    (ilibRoot ? "    ilibRoot: '" + ilibRoot + "',\n" : "") +
+    "    size: 'custom',\n" +
+    "    target: 'web',\n" +
+    "    tempDir: 'assets'\n" +
+    "};\n" +
     "module.exports = {\n" +
     "    entry: path.resolve('./" + outputFile + "'),\n" +
     "    output: {\n" +
@@ -171,14 +180,7 @@ var webpackConfigContents =
     "            test: /\.js$/,\n" +
     "            use: {\n" +
     "                loader: 'ilib-webpack-loader',\n" +
-    "                options: {\n" +
-    "                    locales: " + JSON.stringify(locales) + ",\n" +
-    "                    assembly: '" + options.opt.assembly + "',\n" +
-    "                    compilation: '" + options.opt.compilation + "',\n" +
-    (ilibRoot ? "                    ilibRoot: '" + ilibRoot + "',\n" : "") +
-    "                    size: 'custom',\n" +
-    "                    target: 'web'\n" +
-    "                }\n" +
+    "                options: options\n" +
     "            }\n" +
     "        }]\n" +
     "    },\n" +
@@ -186,13 +188,7 @@ var webpackConfigContents =
     "        new webpack.DefinePlugin({\n" +
     "            __VERSION__: JSON.stringify(require('" + (ilibRoot || 'ilib') + "/package.json').version)\n" +
     "        }),\n" +
-    "        new IlibWebpackPlugin({\n" +
-    "            locales: " + JSON.stringify(locales) + ",\n" +
-    "            assembly: '" + options.opt.assembly + "',\n" +
-    "            compilation: '" + options.opt.compilation + "',\n" +
-    (ilibRoot ? "            ilibRoot: '" + ilibRoot + "',\n" : "") +
-    "            size: 'custom'\n" +
-    "        })\n" +
+    "        new IlibWebpackPlugin(options)\n" +
     "    ]\n" +
     "};\n";
 
