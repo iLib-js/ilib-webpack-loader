@@ -57,7 +57,7 @@ var ilibDataLoader = function(source) {
     var match;
     var output = "";
     var callback;
-    var outputRoot = path.join("../../..", options.tempDir || 'assets');
+    var outputRoot = path.resolve(path.join(process.cwd(), options.tempDir || 'assets'));
 
     options.locales = typeof(options.locales) === "string" ? options.locales.split(",") : (options.locales || [
         "en-AU", "en-CA", "en-GB", "en-IN", "en-NG", "en-PH",

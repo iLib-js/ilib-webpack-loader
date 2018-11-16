@@ -1,6 +1,6 @@
 {
     "name": "ilib-webpack-loader",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "main": "./ilib-webpack-loader.js",
     "bin": {
         "ilib-scanner": "./ilib-scanner.js"
