@@ -532,9 +532,9 @@ First, let's assume you have a web app which supports English for the US, and Fr
 France. Also, we assume that you have installed ilib, webpack, ilib-webpack-loader, and
 ilib-webpack-plugin via npm.
 
-1. The ilib-webpack-loader module contains a node-based tool that can scan your code looking
-   for references to ilib classes. The tool is called `ilib-scanner`. If your node_modules/.bin
-   directory is in your path, you can execute this tool directly on the comand-line. This tool
+1. A sister module `ilib-scanner` contains a node-based tool that can scan your code looking
+   for references to ilib classes. If your node_modules/.bin
+   directory is in your path, you can execute this tool directly on the command-line. This tool
    will generate both an ilib metafile that will include only the classes you need,
    and a webpack.config.js file that configures webpack to create that customized ilib.js file.
 
