@@ -162,6 +162,8 @@ var ilibDataLoader = function(source) {
         return output + partial;
     }.bind(this);
 
+    var importFunctionName = (this.version >= 2) ? "import" : "System.import";
+
     var processLoadLocaleData = function (text) {
         var partial = text;
         var output = "";
@@ -181,9 +183,9 @@ var ilibDataLoader = function(source) {
                 output += "        case '" + file + "':\n";
 
                 output += (file === "ilibmanifest") ?
-                    "            System.import(/* webpackChunkName: '" + file + "' */ '" + path.join(outputPath, file + ".json") + "').then(function(module) {\n" +
+                    "            " + importFunctionName + "(/* webpackChunkName: '" + file + "' */ '" + path.join(outputPath, file + ".json") + "').then(function(module) {\n" +
                     "                callback(module);\n" :
-                    "            System.import(/* webpackChunkName: '" + file + "' */ '" + path.join(outputPath, file + ".js") + "').then(function(module) {\n" +
+                    "            " + importFunctionName + "(/* webpackChunkName: '" + file + "' */ '" + path.join(outputPath, file + ".js") + "').then(function(module) {\n" +
                     "                module && typeof(module.installLocale) === \"function\" && module.installLocale(ilib);\n" +
                     "                callback(module);\n";
 
