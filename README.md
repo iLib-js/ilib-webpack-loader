@@ -48,8 +48,6 @@ To use the loader and plugin, you need to do a few things:
 - Choose how you want to use ilib, as that determines the configuration options
 - Put ilib-webpack-loader and ilib-webpack-plugin into your webpack.config.js and give them
 the appropriate configuration options
-- Update your webpack configuration to put ilib into its own vendor bundle and give it
-the right path for your website
 - Make sure your code requires or imports ilib classes directly
 - Include a special ilib file that will be dynamically rewritten to require all the
 locale data your project needs
@@ -263,7 +261,8 @@ and data loading style
    locale data files so that they can be included into the webpack bundle. Make sure this directory is
    outside of your bundle output path.
 
-1. Put ilib into its own vendor bundle:
+1. If you are using webpack 4 or later, then use optimization.splitChunks to split ilib chunks automatically.
+   If you are using webpack 3 or earlier, put ilib into its own vendor bundle:
 
    ```javascript
    module.exports = [{
