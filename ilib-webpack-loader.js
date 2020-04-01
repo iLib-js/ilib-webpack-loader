@@ -3,7 +3,7 @@
  * all of the locale data that is needed for the requested locales
  *
  * @license
- * Copyright © 2018, JEDLSoft
+ * Copyright © 2018-2020 JEDLSoft
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,7 +135,7 @@ var ilibDataLoader = function(source) {
             output += partial.substring(0, match.index);
             if (options.assembly !== "assembled") {
                 output +=
-                    "ilib.WebpackLoader = require('" + root + "/lib/WebpackLoader.js');\n" +
+                    "ilib.WebpackLoader = require('" + path.join(root, "lib", "WebpackLoader.js").replace(/\\/g, "\\\\") + "');\n" +
                     "ilib.setLoaderCallback(ilib.WebpackLoader(ilib));\n" +
                     "ilib._dyncode = false;\n" +
                     "ilib._dyndata = true;\n";
@@ -146,7 +146,7 @@ var ilibDataLoader = function(source) {
                     files.forEach(function(locale) {
                         if (locale !== "ilibmanifest") {
                             var name = "locale" + locale.replace(/-/g, '_');
-                            output += "var " + name + " = require('" + path.join(outputPath, locale + ".js") + "'); " + name + " && typeof(" + name + ".installLocale) === 'function' && " + name + ".installLocale(ilib);\n";
+                            output += "var " + name + " = require('" + path.join(outputPath, locale + ".js").replace(/\\/g, "\\\\") + "'); " + name + " && typeof(" + name + ".installLocale) === 'function' && " + name + ".installLocale(ilib);\n";
                         }
                     });
                 }
